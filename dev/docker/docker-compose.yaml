@@ -1,33 +1,29 @@
-##
-#  This compose file is used for local development and adapter testing only.
+#This compose file is used for local development and adapter testing only.
 #  See `/docker` for a generic and production-ready docker file
-##
 
 version: "3.5"
 services:
   database:
-    image: postgres:15-alpine
-    shm_size: 1gb
-    environment:
-      POSTGRES_USER: "root"
-      POSTGRES_PASSWORD: "root"
-      POSTGRES_DB: "dbt"
-    ports:
-      - "5431:5432"
+    image: postgres:15-alpine   # Using an Alpine version of Postgres
+    shm_size: 1gb               # Setting shared memory size to 1GB
+    environment:                 # Environment variables for the PostgreSQL server
+      POSTGRES_USER: "root"     # Username set to 'root'
+      POSTGRES_PASSWORD: "root" # Password also set to 'root'
+      POSTGRES_DB: "dbt"        # Database name is 'dbt'
+    ports:                       # Port mapping from host machine to Docker container
+       - "5431:5432"            # Maps port 5431 on the host to port 5432 in the Docker container
 
-  test:
-    build:
-      context: .
-      dockerfile: Dockerfile.test #docker only for dev purpose
-      args:
-        # Run `make .env` to set $USER_ID and $GROUP_ID
-        USER_ID: ${USER_ID:-}
-        GROUP_ID: ${GROUP_ID:-}
-    command: "bash -c 'cd core && hatch run ci:unit-tests'"
-    environment:
-      POSTGRES_TEST_HOST: "database"
-    volumes:
-      - .:/usr/app
-    working_dir: /usr/app
-    depends_on:
-      - database
+  dbt_dev:
+    working_dir: /app/first_project
+    build:                     # Instruction to build a Docker image from the current directory
+      context: ../..                # The '.' means this is your current working directory & .. reach 1 level
+      dockerfile: dev/docker/Dockerfile.test   # This tells it where to find the Dockerfile that you're using for testing dbt
+    volumes:                    # Volumes are used so that changes in the host machine can be seen by the container
+       - ../..:/app             # Mounts your current directory (.) into the /app directory within the container
+       - /app/.venv             #a volume that maps the local directory ('.venv') into the container. This means any changes made in this directory will be reflected inside the running Docker container and vice versa.
+    environment:                 # Environment variables set for this service
+      - DBT_PROFILES_DIR=/app   # This tells dbt where to look for profiles.yml files
+      - DBT_POSTGRES_HOST=database  # The hostname of the database service is 'database'
+    depends_on:                 # Services that this one depends on
+       - database               # So, dbt_dev will not start until database has started
+    command: sleep infinity     # This keeps the container running so you can run commands in it

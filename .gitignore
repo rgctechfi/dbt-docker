@@ -1,17 +1,39 @@
-# Python-generated files
+# --- Python  / UV (Universal Versions) ---
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
 *.egg-info
-
-# Virtual environments
 .venv
+*.py[cod]
+*$py.class
+.python-version
 
-# credentials
+# credentials (informations d'identification)
 .env
 
-# files
+# files (fichiers)
 *.parquet
 *.csv
+
+# --- dbt (Data Build Tool) ---
+# Logs contain your execution history
+logs/
+# The target folder contains the compiled SQL (generated each run)
+target/
+# Packages installed via dbt deps (like node_modules in Node.js)
+dbt_packages/
+# Specific files for dbt modules
+modules/
+
+# --- Docker ---
+.env
+# If you create a local folder to persist Postgres data
+pgdata/
+
+# --- IDE & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+first_project:
+  outputs:
+    dev:
+      dbname: dbt
+      host: database
+      pass: root
+      port: 5432
+      schema: public
+      threads: 1
+      type: postgres
+      user: root
+  target: dev

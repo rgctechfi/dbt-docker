@@ -1,13 +1,26 @@
-# 1. Start from an official Python image
 FROM python:3.11-slim
 
-# 2. Set the working directory in the container
-WORKDIR /usr/app
+# On installe git et on nettoie les fichiers temporaires
+RUN apt-get update && \
+    apt-get install -y git && \
+    rm -rf /var/lib/apt/lists/*
 
-# 3. Install hatch (the tool your command uses)
-RUN pip install hatch
+# On récupère uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# 4. Copy the rest of the project files
+WORKDIR /app
+
+# 1. On copie les fichiers de config d'abord (pour le cache)
+COPY pyproject.toml uv.lock ./
+
+# 2. On installe les dépendances dans un dossier fixe
+RUN uv sync --frozen
+
+# 3. On copie le reste du code
 COPY . .
 
-# (The rest is managed by your docker-compose.yml)
+# 4. On ajoute le chemin des exécutables au PATH du système
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Maintenant, 'dbt' est accessible partout !
+ENTRYPOINT ["dbt"]
