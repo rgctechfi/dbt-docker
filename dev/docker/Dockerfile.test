@@ -1,0 +1,13 @@
+# 1. Start from an official Python image
+FROM python:3.11-slim
+
+# 2. Set the working directory in the container
+WORKDIR /usr/app
+
+# 3. Install hatch (the tool your command uses)
+RUN pip install hatch
+
+# 4. Copy the rest of the project files
+COPY . .
+
+# (The rest is managed by your docker-compose.yml)
