@@ -1,29 +1,40 @@
-#This compose file is used for local development and adapter testing only.
-#  See `/docker` for a generic and production-ready docker file
-
-version: "3.5"
+# This Docker Compose file is intended for local development and adapter testing.
+# For a generic, production-ready setup, refer to the `/docker` directory.
 services:
+  # Defines the PostgreSQL database service.
   database:
-    image: postgres:15-alpine   # Using an Alpine version of Postgres
-    shm_size: 1gb               # Setting shared memory size to 1GB
-    environment:                 # Environment variables for the PostgreSQL server
-      POSTGRES_USER: "root"     # Username set to 'root'
-      POSTGRES_PASSWORD: "root" # Password also set to 'root'
-      POSTGRES_DB: "dbt"        # Database name is 'dbt'
-    ports:                       # Port mapping from host machine to Docker container
-       - "5431:5432"            # Maps port 5431 on the host to port 5432 in the Docker container
+    image: postgres:15-alpine   # Use the lightweight Alpine version of Postgres 15.
+    shm_size: 1gb               # Set the shared memory size to 1GB, which can improve database performance.
+    environment:                # Set environment variables for the database container.
+      POSTGRES_USER: "root"     # The username for the PostgreSQL database.
+      POSTGRES_PASSWORD: "root" # The password for the PostgreSQL database.
+      POSTGRES_DB: "dbt"        # The name of the default database to create.
+    ports:                      # Map ports between the host and the container.
+       - "5431:5432"            # Map port 5431 on the host to port 5432 in the container.
 
+  # Defines the dbt development service.
   dbt_dev:
-    working_dir: /app/first_project
-    build:                     # Instruction to build a Docker image from the current directory
-      context: ../..                # The '.' means this is your current working directory & .. reach 1 level
-      dockerfile: dev/docker/Dockerfile.test   # This tells it where to find the Dockerfile that you're using for testing dbt
-    volumes:                    # Volumes are used so that changes in the host machine can be seen by the container
-       - ../..:/app             # Mounts your current directory (.) into the /app directory within the container
-       - /app/.venv             #a volume that maps the local directory ('.venv') into the container. This means any changes made in this directory will be reflected inside the running Docker container and vice versa.
-    environment:                 # Environment variables set for this service
-      - DBT_PROFILES_DIR=/app   # This tells dbt where to look for profiles.yml files
-      - DBT_POSTGRES_HOST=database  # The hostname of the database service is 'database'
-    depends_on:                 # Services that this one depends on
-       - database               # So, dbt_dev will not start until database has started
-    command: sleep infinity     # This keeps the container running so you can run commands in it
+      working_dir: /app/first_project # Set the default working directory inside the container.
+      build:
+        context: ../..              # The build context is the root of the project.
+        dockerfile: dev/docker/Dockerfile.test # The Dockerfile to use for building the image.
+      entrypoint: /bin/sh           # Override the default entrypoint to a shell.
+      command: -c "sleep infinity"  # Keep the container running indefinitely for development.
+      volumes:
+        # Mount the entire project directory from the host to /app in the container.
+        # This allows for live code reloading.
+        - ../..:/app
+        # Use a named volume to persist the Python virtual environment.
+        # This prevents the host's .venv from overwriting the container's .venv
+        # and preserves installed dependencies between runs.
+        - venv_data:/app/.venv
+      environment:
+        # Set environment variables for the dbt service.
+        - DBT_PROFILES_DIR=/app      # Tell dbt where to find the profiles.yml file.
+        - DBT_POSTGRES_HOST=database # The hostname of the database service.
+      depends_on:
+        - database                 # Ensure the database service starts before this service.
+
+# Define the named volume used by the dbt_dev service.
+volumes:
+  venv_data:

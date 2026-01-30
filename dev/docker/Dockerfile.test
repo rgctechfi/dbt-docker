@@ -1,26 +1,20 @@
 FROM python:3.11-slim
 
-# On installe git et on nettoie les fichiers temporaires
 RUN apt-get update && \
     apt-get install -y git && \
     rm -rf /var/lib/apt/lists/*
 
-# On récupère uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR /app
 
-# 1. On copie les fichiers de config d'abord (pour le cache)
 COPY pyproject.toml uv.lock ./
 
-# 2. On installe les dépendances dans un dossier fixe
-RUN uv sync --frozen
+# MODIFICATION ICI : On force uv à utiliser le Python 3.11 du système
+RUN uv sync --frozen --python /usr/local/bin/python
 
-# 3. On copie le reste du code
 COPY . .
 
-# 4. On ajoute le chemin des exécutables au PATH du système
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Maintenant, 'dbt' est accessible partout !
 ENTRYPOINT ["dbt"]
